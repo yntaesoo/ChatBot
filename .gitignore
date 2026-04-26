@@ -1,0 +1,22 @@
+# Python Virtual Environment
+backend/.venv/
+.venv/
+venv/
+env/
+
+# API Keys and Secrets (CRITICAL: Do not upload to GitHub!)
+.env
+.env.*
+
+# ChromaDB Vector Database
+backend/chroma_db/
+chroma_db/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS Generated
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+# 이곳에 학습시킬 웹페이지 URL을 한 줄에 하나씩 입력해주세요.
+# 예시:
+# https://ic.dongseo.ac.kr/kr/visa-info
+# https://ic.dongseo.ac.kr/kr/academic-guide
+
+https://uni.dongseo.ac.kr/ic/
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000295	#학부과정 전체소개
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000185	#게임학과
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000186	#교수진
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000453	#MD
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000288	#curiculum
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000406	#Joint Degree program
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000407	#academic roadmap

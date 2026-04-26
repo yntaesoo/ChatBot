@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live2D Sandbox</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #0b0f19;
+        color: #e8eefc;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      }
+      .wrap {
+        display: grid;
+        grid-template-columns: 560px 1fr;
+        gap: 16px;
+        padding: 16px;
+        box-sizing: border-box;
+        height: 100%;
+      }
+      .panel {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .log {
+        padding: 12px;
+        white-space: pre-wrap;
+        font: 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+      }
+      .hint {
+        padding: 12px;
+        opacity: 0.9;
+        line-height: 1.4;
+      }
+      a {
+        color: #9cc2ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="panel">
+        <canvas id="c" width="520" height="520"></canvas>
+        <div class="hint">
+          - 이 페이지는 <b>현재 앱 코드와 분리된 최소 재현</b>입니다.<br />
+          - 기본 모델: 히요리<br />
+          - 마스킹 유지: <code>?mask=1</code><br />
+          - 돌아가면 본 UI로 이식합니다.
+        </div>
+      </div>
+      <div class="panel">
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <!-- Cubism Core는 로컬 정적 파일 사용 -->
+    <script src="/static/vendor/live2d/live2dcubismcore.min.js"></script>
+    <script type="module" src="/static/sandbox.js?v=2"></script>
+  </body>
+</html>
+

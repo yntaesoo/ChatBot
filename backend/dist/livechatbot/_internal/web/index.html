@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live2D Chatbot MVP</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="topbar">
+        <div class="brand">조직 페르소나 챗봇 (Live2D MVP)</div>
+        <div class="controls">
+          <select id="modelSelect" class="ui-select">
+            <option value="/static/assets/live2d/haru/haru_greeter_pro_jp/runtime/haru_greeter_t05.model3.json" selected>모델: 하루</option>
+            <option value="/static/assets/live2d/hiyori/hiyori_free_ko/runtime/hiyori_free_t08.model3.json">모델: 히요리</option>
+          </select>
+          <select id="langSelect" class="ui-select">
+            <option value="ko-KR">언어: 한국어</option>
+            <option value="en-US">언어: English</option>
+            <option value="ja-JP">언어: 日本語</option>
+          </select>
+        </div>
+        <div class="status" id="status">대기</div>
+      </header>
+
+      <main class="main">
+        <section class="avatarPanel">
+          <div class="canvas-wrapper">
+            <canvas id="avatarCanvas" width="520" height="520"></canvas>
+          </div>
+          <div class="zoom-control">
+            <span class="zoom-label">축소</span>
+            <input type="range" id="zoomSlider" min="0.5" max="3" step="0.1" value="1" title="화면 배율 조정" />
+            <span class="zoom-label">확대</span>
+          </div>
+          <div class="avatarHint">
+            현재는 MVP 스켈레톤입니다. Live2D SDK/모델을 넣으면 캐릭터로 교체 가능합니다.
+          </div>
+        </section>
+
+        <section class="chatPanel">
+          <div class="chatLog" id="chatLog"></div>
+
+          <form class="composer" id="composer">
+            <button type="button" id="micBtn" class="micBtn" title="음성 입력 시작/종료">🎤</button>
+            <input
+              id="messageInput"
+              class="messageInput"
+              placeholder="메시지를 입력하세요"
+              autocomplete="off"
+            />
+            <button class="sendBtn" id="sendBtn" type="submit">전송</button>
+            <button class="stopBtn" id="stopBtn" type="button" style="display: none;" title="답변 중단">⏹️ 중단</button>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <!-- Live2D Cubism Core (from local SDK copy) -->
+    <script src="/static/vendor/live2d/live2dcubismcore.min.js"></script>
+    <script>
+      // 일부 환경에서 전역 var가 window에 붙지 않는 경우를 대비한 보정
+      // (pixi-live2d-display는 window.Live2DCubismCore를 찾는다)
+      if (!window.Live2DCubismCore && typeof Live2DCubismCore !== "undefined") {
+        window.Live2DCubismCore = Live2DCubismCore;
+      }
+
+      // pixi-live2d-display 로딩 중 발생하는 에러를 UI로 끌어올리기 위한 버퍼
+      window.__live2dLoadErrors = [];
+      window.addEventListener("error", (ev) => {
+        const e = ev?.error;
+        window.__live2dLoadErrors.push({
+          message: ev?.message || String(e || "unknown error"),
+          filename: ev?.filename,
+          lineno: ev?.lineno,
+          colno: ev?.colno,
+          stack: e?.stack,
+          ts: Date.now(),
+        });
+        // 너무 길어지지 않게 최근 5개만 유지
+        if (window.__live2dLoadErrors.length > 5) window.__live2dLoadErrors.shift();
+      });
+    </script>
+    <!-- PIXI/pixi-live2d-display는 Live2D 드라이버에서 ESM으로 로드합니다. -->
+    <!-- cache-bust -->
+    <script type="module" src="/static/app.js?v=65"></script>
+  </body>
+</html>
+
