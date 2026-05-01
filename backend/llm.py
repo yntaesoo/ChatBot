@@ -44,6 +44,25 @@ def build_system_prompt(settings: Settings, language: str = "한국어", context
     return prompt
 
 
+def extract_search_query(client: OpenAI, user_query: str) -> str:
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "사용자의 질문에서 문서 검색을 위한 핵심 명사(키워드)만 추출하세요. 일상어(알려줘, 뭐야 등)는 제거하고 띄어쓰기를 명확히 하세요. 필요한 경우 영단어(Visa 등)를 병기하세요. (예: '비자연장 절차 좀 알려줘' -> '비자 연장 절차 Visa'). 결과만 출력하세요."
+                },
+                {"role": "user", "content": user_query}
+            ],
+            temperature=0.0
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print("키워드 추출 오류:", e)
+        return user_query  # 실패 시 원본 쿼리 반환
+
+
 def stream_chat_completion(
     *,
     client: OpenAI,
@@ -60,10 +79,15 @@ def stream_chat_completion(
 
     context = ""
     if user_query:
+        # 1. 쿼리 재작성 (검색 정확도 향상)
+        search_query = extract_search_query(client, user_query)
+        print(f"[RAG] 원본 질문: '{user_query}' -> 검색 키워드: '{search_query}'")
+        
         vs = get_vectorstore()
         if vs:
             try:
-                docs = vs.similarity_search(user_query, k=3)
+                # 2. k 개수를 늘려 문맥 다양성 확보
+                docs = vs.similarity_search(search_query, k=5)
                 context = "\n\n".join([f"- {doc.page_content}" for doc in docs])
             except Exception as e:
                 print("RAG 검색 오류:", e)

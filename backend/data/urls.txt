@@ -11,3 +11,9 @@ https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000453	#MD
 https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000288	#curiculum
 https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000406	#Joint Degree program
 https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000407	#academic roadmap
+# Notice in IC 
+https://uni.dongseo.ac.kr/ic/?pCode=MN0000013&mode=view&idx=2467
+https://mybusan.kr/
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN0000013 : 2
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN2000625 : 2
+https://uni.dongseo.ac.kr/ic/index.php?pCode=MN0000016 : 2

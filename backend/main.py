@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List
 
-from fastapi import FastAPI, Request
+import os
+import shutil
+import subprocess
+
+from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -102,4 +106,78 @@ async def tts(request: Request) -> Response:
     except Exception as e:
         # 프론트가 원인을 볼 수 있도록 메시지를 내려준다.
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.post("/api/upload")
+async def upload_files(files: List[UploadFile] = File(...)):
+    data_dir = "./data"
+    os.makedirs(data_dir, exist_ok=True)
+    
+    saved_files = []
+    for file in files:
+        if not file.filename:
+            continue
+        file_path = os.path.join(data_dir, file.filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        saved_files.append(file.filename)
+        
+    return {"message": "Files uploaded successfully", "files": saved_files}
+
+
+@app.post("/api/train")
+async def train_model(request: Request):
+    try:
+        settings = get_settings()
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"error": str(e)})
+        
+    body = await request.json()
+    password = body.get("password")
+    urls = body.get("urls", [])
+    
+    if password != settings.admin_password:
+        return JSONResponse(status_code=401, content={"error": "비밀번호가 틀렸습니다."})
+        
+    data_dir = "./data"
+    os.makedirs(data_dir, exist_ok=True)
+    
+    if urls:
+        urls_file = os.path.join(data_dir, "urls.txt")
+        with open(urls_file, "a", encoding="utf-8") as f:
+            for url in urls:
+                if url.strip():
+                    f.write(f"{url.strip()}\n")
+                    
+    import sys
+    def gen():
+        try:
+            yield f"data: {json.dumps({'type': 'log', 'message': '학습 프로세스를 시작합니다...'})}\n\n"
+            
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
+            
+            process = subprocess.Popen(
+                [sys.executable, "ingest.py"],
+                cwd=".",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=env,
+                text=True,
+                bufsize=1
+            )
+            
+            for line in process.stdout:
+                decoded_line = line.rstrip('\r\n')
+                yield f"data: {json.dumps({'type': 'log', 'message': decoded_line})}\n\n"
+                
+            process.wait()
+            if process.returncode == 0:
+                yield f"data: {json.dumps({'type': 'done', 'message': '학습 완료!'})}\n\n"
+            else:
+                yield f"data: {json.dumps({'type': 'error', 'message': f'프로세스 오류 코드: {process.returncode}'})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': repr(e)})}\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 

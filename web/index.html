@@ -11,6 +11,7 @@
       <header class="topbar">
         <div class="brand">조직 페르소나 챗봇 (Live2D MVP)</div>
         <div class="controls">
+          <button id="openAdminBtn" class="ui-btn" type="button">학습 데이터 관리</button>
           <select id="modelSelect" class="ui-select">
             <option value="/static/assets/live2d/haru/haru_greeter_pro_jp/runtime/haru_greeter_t05.model3.json" selected>모델: 하루</option>
             <option value="/static/assets/live2d/hiyori/hiyori_free_ko/runtime/hiyori_free_t08.model3.json">모델: 히요리</option>
@@ -62,6 +63,37 @@
           </form>
         </section>
       </main>
+    </div>
+
+    <!-- Admin / Upload Modal -->
+    <div id="adminModal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h2>학습 데이터 관리</h2>
+          <button id="closeAdminBtn" class="close-btn">&times;</button>
+        </header>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="fileUpload">파일 업로드 (PDF, TXT)</label>
+            <input type="file" id="fileUpload" multiple accept=".pdf,.txt" class="ui-input" />
+          </div>
+          <div class="form-group">
+            <label for="urlUpload">URL 입력 (줄바꿈으로 구분)</label>
+            <textarea id="urlUpload" class="ui-textarea" placeholder="https://example.com/page1&#10;https://example.com/page2"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="adminPassword">관리자 비밀번호</label>
+            <input type="password" id="adminPassword" class="ui-input" placeholder="비밀번호 입력" />
+          </div>
+          <div id="trainLogContainer" class="form-group" style="display: none;">
+            <label>학습 진행 상황</label>
+            <pre id="trainLog" class="ui-textarea" style="height: 150px; overflow-y: auto; font-size: 12px; background: #111; color: #0f0; margin-top: 5px; white-space: pre-wrap;"></pre>
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button id="trainBtn" class="ui-btn primary-btn">업로드 및 학습 실행</button>
+        </footer>
+      </div>
     </div>
 
     <!-- Live2D Cubism Core (from local SDK copy) -->

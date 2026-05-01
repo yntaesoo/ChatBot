@@ -23,6 +23,8 @@ class Settings:
     tts_model: str
     tts_voice: str
 
+    admin_password: str
+
 
 def get_settings() -> Settings:
     openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -42,5 +44,6 @@ def get_settings() -> Settings:
         ).strip(),
         tts_model=os.getenv("TTS_MODEL", "gpt-4o-mini-tts").strip(),
         tts_voice=os.getenv("TTS_VOICE", "alloy").strip(),
+        admin_password=os.getenv("ADMIN_PASSWORD", "admin1234").strip(),
     )
 

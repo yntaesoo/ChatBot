@@ -159,7 +159,10 @@ async function maybeEnableLive2D() {
       const lw = lb?.width || 0;
       const lh = lb?.height || 0;
       if (lw > 0 && lh > 0) {
-        model.pivot?.set?.(lb.x + lw / 2, lb.y + lh / 2);
+        // 투명 마스크 등 비대칭 요소를 피해, 모델 고유의 캔버스 절반(internalModel.width / 2)을 실제 중심(VC)으로 사용
+        const cx = (model.internalModel && model.internalModel.width) ? model.internalModel.width / 2 : (lb.x + lw / 2);
+        const cy = (model.internalModel && model.internalModel.height) ? model.internalModel.height * 0.25 : (lb.y + lh * 0.25);
+        model.pivot?.set?.(cx, cy);
         const s = Math.min(w / lw, h / lh) * 0.9;
         modelBaseScale = Math.max(0.1, Math.min(20, s));
       } else {
@@ -167,17 +170,18 @@ async function maybeEnableLive2D() {
       }
       
       const zoomSlider = document.getElementById("zoomSlider");
-      const currentZoom = zoomSettings[MODEL_URL] || 1;
+      const currentZoom = zoomSettings[MODEL_URL] || 1.3; // 기본 배율을 조금 키워 화면에 꽉 차게 설정
       if (zoomSlider) zoomSlider.value = currentZoom;
       model.scale.set(modelBaseScale * currentZoom);
       
-      model.position.set(w / 2, h / 2 + h * 0.15);
+      // 캔버스 정중앙에 캐릭터의 진짜 중심축(VC)이 위치하도록 배치
+      model.position.set(w / 2, h / 2);
     } catch (_) {
       modelBaseScale = 0.7;
-      const currentZoom = zoomSettings[MODEL_URL] || 1;
+      const currentZoom = zoomSettings[MODEL_URL] || 1.3;
       const zoomSlider = document.getElementById("zoomSlider");
       if (zoomSlider) zoomSlider.value = currentZoom;
-      model.position.set(w / 2, h * 0.6);
+      model.position.set(w / 2, h / 2);
       model.scale.set(modelBaseScale * currentZoom);
     }
 
@@ -577,3 +581,139 @@ function resetIdleTimer() {
 // Initialize idle timer and welcome message
 resetIdleTimer();
 addMessage("assistant", "안녕하세요! 동서대학교 International College 안내 도우미입니다. 궁금한 점을 터치하여 질문해주세요.");
+
+// --- Admin Modal Logic ---
+const adminModal = document.getElementById("adminModal");
+const openAdminBtn = document.getElementById("openAdminBtn");
+const closeAdminBtn = document.getElementById("closeAdminBtn");
+const trainBtn = document.getElementById("trainBtn");
+
+if (openAdminBtn) {
+  openAdminBtn.addEventListener("click", () => {
+    adminModal.style.display = "flex";
+  });
+}
+
+if (closeAdminBtn) {
+  closeAdminBtn.addEventListener("click", () => {
+    adminModal.style.display = "none";
+  });
+}
+
+window.addEventListener("click", (e) => {
+  if (e.target === adminModal) {
+    adminModal.style.display = "none";
+  }
+});
+
+if (trainBtn) {
+  trainBtn.addEventListener("click", async () => {
+    const fileInput = document.getElementById("fileUpload");
+    const urlInput = document.getElementById("urlUpload");
+    const pwdInput = document.getElementById("adminPassword");
+    
+    const files = fileInput.files;
+    const urlsText = urlInput.value;
+    const password = pwdInput.value;
+    
+    if (!password) {
+      alert("관리자 비밀번호를 입력해주세요.");
+      return;
+    }
+    
+    trainBtn.disabled = true;
+    trainBtn.textContent = "업로드 및 학습 중...";
+    
+    try {
+      // 1. Upload Files
+      if (files.length > 0) {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+          formData.append("files", files[i]);
+        }
+        
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData
+        });
+        
+        if (!uploadRes.ok) {
+          throw new Error("파일 업로드 실패");
+        }
+      }
+      
+      // 2. Add URLs and Train
+      const urls = urlsText.split("\n").map(u => u.trim()).filter(u => u.length > 0);
+      
+      const logContainer = document.getElementById("trainLogContainer");
+      const logPre = document.getElementById("trainLog");
+      logContainer.style.display = "block";
+      logPre.textContent = "서버 연결 중...\n";
+
+      const trainRes = await fetch("/api/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, urls })
+      });
+      
+      if (!trainRes.ok) {
+        if (trainRes.status === 401) {
+          throw new Error("비밀번호가 틀렸습니다.");
+        }
+        let errMsg = "학습 처리 중 오류가 발생했습니다.";
+        try {
+          const errJson = await trainRes.json();
+          if (errJson.error) errMsg = errJson.error;
+        } catch(e) {}
+        throw new Error(errMsg);
+      }
+      
+      const reader = trainRes.body.getReader();
+      const dec = new TextDecoder("utf-8");
+      let buf = "";
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        
+        let idx;
+        while ((idx = buf.indexOf("\n\n")) >= 0) {
+          const rawEvent = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          
+          const line = rawEvent.split("\n").find((l) => l.startsWith("data: "));
+          if (!line) continue;
+          
+          try {
+            const payload = JSON.parse(line.replace(/^data:\s*/, ""));
+            if (payload.type === "log" || payload.type === "done") {
+              logPre.textContent += payload.message + "\n";
+              logPre.scrollTop = logPre.scrollHeight;
+            } else if (payload.type === "error") {
+              throw new Error(payload.message);
+            }
+          } catch(e) {
+            if (e.message !== "Unexpected end of JSON input" && !e.message.includes("JSON")) {
+              throw e;
+            }
+          }
+        }
+      }
+      
+      alert("데이터 업로드 및 학습이 성공적으로 완료되었습니다!");
+      
+      fileInput.value = "";
+      urlInput.value = "";
+      pwdInput.value = "";
+      logContainer.style.display = "none";
+      adminModal.style.display = "none";
+      
+    } catch (err) {
+      alert(`오류: ${err.message}`);
+    } finally {
+      trainBtn.disabled = false;
+      trainBtn.textContent = "업로드 및 학습 실행";
+    }
+  });
+}
